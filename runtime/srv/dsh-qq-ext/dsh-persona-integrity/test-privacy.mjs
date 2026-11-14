@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict';
+import {mkdtempSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+const home=mkdtempSync(join(tmpdir(),'dsh-real-group-'));
+process.env.DSH_HOME=home;delete process.env.LONG_MEMORY_FILE;
+globalThis.fetch=async()=>{throw new Error('NO_NETWORK_ALLOWED')};
+const save=(name,data)=>writeFileSync(join(home,name),JSON.stringify(data));
+const owner={id:'session-owner',session:{header:{id:'session-owner'}}};
+const group={id:'session-group',session:{header:{id:'session-group'}}};
+const guest={id:'session-guest',session:{header:{id:'session-guest'}}};
+const conf={主人号码:'100',私聊QQ:'100',私聊会话:owner.id,绑定:[{类型:'私聊',号码:'100',会话:owner.id},{类型:'群',号码:'300',会话:group.id}]};
+save('qq-bridge-config.json',conf);save('guests.json',{'200':{session:guest.id}});
+writeFileSync(join(home,'memory-long.md'),'- PRIVATE_MEMORY\n');
+const root='/usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai';
+const {Context}=await import(root+'/cordis/lib/index.js');
+const {SystemPrompt}=await import(root+'/dsh-system-prompt/lib/index.js');
+const {ToolRuntime}=await import(root+'/dsh-tools/lib/index.js');
+const {assembleContextFor}=await import(root+'/dsh-agent/lib/index.js');
+const {bindScopeParent}=await import(root+'/dsh-scope/lib/index.js');
+const memory=await import('/srv/dsh-qq-ext/dsh-long-memory/lib/index.js');
+const privacy=await import('/srv/dsh-qq-ext/dsh-long-memory/lib/group-privacy.mjs');
+const access=await import('/srv/dsh-qq-ext/dsh-long-memory/lib/access.js');
+const ctx=new Context();
+await ctx.plugin(SystemPrompt,{});
+await ctx.plugin(ToolRuntime,{mode:'native',maxParallelSubCalls:1});
+ctx.systemPrompt.section({name:'persona',order:0,complete:true,text:'PRIVATE_PERSONA'});
+ctx.systemPrompt.section({name:'local-instructions',order:10,text:'PRIVATE_AGENTS_FILE'});
+ctx.systemPrompt.context({name:'other-private',order:10,text:'PRIVATE_CONTEXT'});
+let calls=0;
+ctx.tools.register({name:'private_test_tool',description:'private tool',parameters:{},output:{schema:{type:'object',properties:{}},render:()=>[]},async execute(){calls++;return {}}});
+ctx.webServer={register:()=>()=>{}};
+memory.apply(ctx);
+privacy.sealGroupBindings({sessions:{get:()=>({header:{isSeeded:false,delegationDepth:0},snapshotEvents:()=>[]})}},conf);
+const signal=new AbortController().signal;
+const assemble=agent=>ctx.systemPrompt.assemble(assembleContextFor(agent,signal));
+const execute=(name,agent,args={})=>ctx.tools.execute({name,agent,arguments:args,signal,callId:'audit-'+Math.random()});
+try{
+ const own=await assemble(owner);
+ assert.match(JSON.stringify(own),/PRIVATE_PERSONA/);assert.doesNotMatch(JSON.stringify(own),/PRIVATE_MEMORY/);
+ for(const actor of [group,guest,{id:'session-unknown'}]){
+  const result=await assemble(actor);
+  assert.doesNotMatch(JSON.stringify(result),/PRIVATE_/);
+  if(actor===group)assert.ok(result.tools.every(t=>access.groupTools.has(t.name)));
+  if(actor.id==='session-unknown')assert.equal(result.tools.length,0);
+  assert.equal((await execute('private_test_tool',actor)).isError,true);
+ }
+ assert.equal(calls,0);
+ const ownerChild={id:'session-owner-child'},groupChild={id:'session-group-child'};
+ bindScopeParent(ownerChild,owner);bindScopeParent(groupChild,group);
+ await execute('private_test_tool',ownerChild);assert.equal(calls,1);
+ assert.equal((await execute('private_test_tool',groupChild)).isError,true);assert.equal(calls,1);
+ assert.doesNotMatch(JSON.stringify(await assemble(groupChild)),/PRIVATE_/);
+ // Even a group scope linked under the owner must not inherit owner authority.
+ bindScopeParent(group,owner);
+ assert.equal(access.identity(group).role,'group');
+ assert.equal((await execute('private_test_tool',group)).isError,true);
+ assert.equal((await execute('list_long_memory',group)).isError,true);
+ const before=readFileSync(join(home,'memory-long.md'),'utf8');
+ assert.equal((await execute('remember_forever',group,{text:'GROUP_WRITE'})).isError,true);
+ assert.equal(readFileSync(join(home,'memory-long.md'),'utf8'),before);
+ console.log('PASS: installed Cordis/SystemPrompt/ToolRuntime, private sections and contexts excluded, owner prompt preserved, group and descendants denied, owner descendants retained, private memory not auto-injected; no real network or QQ sends');
+}finally{rmSync(home,{recursive:true,force:true})}

@@ -1,0 +1,5 @@
+# dsh-qq-profile
+# 给智能体一套改自己 QQ 资料的工具（昵称/签名/头像/在线状态/点赞/好友备注）。
+- insert:
+    - id: qq-profile
+      name: dsh-qq-profile

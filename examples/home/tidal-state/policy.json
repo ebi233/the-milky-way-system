@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "enabled": true,
+  "allowSelfTune": true,
+  "revision": 1,
+  "params": {
+    "emotionHalfMinutes": 90,
+    "activityHalfHours": 4,
+    "curiosityBias": 1,
+    "socialBias": 1,
+    "restBias": 1,
+    "memoryHalfDays": 14,
+    "associationMinOverlap": 2,
+    "initiativeFeedbackWeight": 0.5,
+    "expressionRepeatThreshold": 4
+  },
+  "history": []
+}

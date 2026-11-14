@@ -1,0 +1,20 @@
+{
+  "name": "the-milky-way-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "星河系统：基于 DSH 与社区插件扩展的持续状态、事件理解、记忆、关系与个人表达系统。",
+  "author": "ebi233",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {"type": "git", "url": "https://github.com/ebi233/the-milky-way-system.git"},
+  "homepage": "https://github.com/ebi233/the-milky-way-system#readme",
+  "bugs": {"url": "https://github.com/ebi233/the-milky-way-system/issues"},
+  "keywords": ["xinghe", "ai-companion", "deepseek-harness", "memory", "state", "qq", "persona"],
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "check": "python tools/check_publication.py",
+    "test": "npm run check && npm run test:xinghe && npm run test:qq",
+    "test:xinghe": "node --test --test-concurrency=1 tests/appraisal.test.mjs tests/followup.test.mjs tests/format.test.mjs tests/growth.test.mjs",
+    "test:qq": "node --test --test-concurrency=1 experimental/qq-cloud/test-adapter.cjs experimental/qq-cloud/test-private.cjs experimental/qq-cloud/test-service.cjs experimental/qq-cloud/test-media-recovery.cjs experimental/qq-cloud/test-http.cjs"
+  }
+}

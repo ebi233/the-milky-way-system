@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-14",
+  "scope": "Public source snapshot; offline checks only",
+  "behavior_tests": {
+    "xinghe": 42,
+    "qq": 31,
+    "passed": 73,
+    "failed": 0
+  },
+  "syntax_and_content": {
+    "javascript": 208,
+    "python": 37,
+    "json": 23,
+    "checked_files_before_publication_records": 308,
+    "errors": []
+  },
+  "known_instance_identifiers_found": 0,
+  "production_modified": false,
+  "real_messages_sent": false,
+  "paid_model_calls": 0
+}

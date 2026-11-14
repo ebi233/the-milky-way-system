@@ -1,0 +1,24 @@
+{
+  "name": "dsh-plugin-tavern",
+  "version": "0.1.1",
+  "description": "酒馆（SillyTavern 精简版）：角色卡解析管理员 + 角色扮演讲述者两个 Agent Preset，以及配套的解析/精修/扮演脚本。",
+  "type": "module",
+  "main": "src/index.js",
+  "files": [
+    "src/",
+    "assets/",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "sillytavern",
+    "roleplay",
+    "agent-preset"
+  ],
+  "license": "MIT"
+}

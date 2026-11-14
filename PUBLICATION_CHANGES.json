@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-14",
+  "scope": "Public source snapshot, not a backup of personal runtime data",
+  "changes": [
+    {
+      "path": "runtime/srv/dsh-qq-ext/dsh-persona-integrity/context-core.mjs",
+      "reason": "remove instance identifiers or private persona defaults"
+    },
+    {
+      "path": "runtime/srv/dsh-qq-ext/dsh-persona-integrity/review-audio.py",
+      "reason": "remove instance identifiers or private persona defaults"
+    },
+    {
+      "path": "runtime/srv/dsh-qq-ext/dsh-speak-up/lib/host.js",
+      "reason": "remove instance identifiers or private persona defaults"
+    },
+    {
+      "path": "runtime/srv/dsh-qq-ext/dsh-speak-up/tests/宿主半边.mjs",
+      "reason": "remove instance identifiers or private persona defaults"
+    },
+    {
+      "path": "runtime/srv/dsh-qq-ext/dsh-speak-up/tests/网页半边.mjs",
+      "reason": "remove instance identifiers or private persona defaults"
+    },
+    {
+      "path": "runtime/srv/dsh-qq-ext/dsh-long-memory/lib/group-privacy.mjs",
+      "reason": "remove instance identifiers or private persona defaults"
+    },
+    {
+      "path": "experimental/qq-cloud/test-adapter.cjs",
+      "reason": "replace account and internal QQ UID fixtures with fictional identifiers"
+    },
+    {
+      "path": "experimental/qq-cloud/test-private.cjs",
+      "reason": "replace account and internal QQ UID fixtures with fictional identifiers"
+    },
+    {
+      "path": "experimental/qq-cloud/test-media-recovery.cjs",
+      "reason": "replace account and internal QQ UID fixtures with fictional identifiers"
+    }
+  ],
+  "excluded": [
+    "credentials and login sessions",
+    "personal persona and relationship data",
+    "conversation history, memory contents and expression corpus",
+    "generated images/audio and user attachments",
+    "third-party binaries, models, node_modules",
+    "old deploy backups and live diagnostics",
+    "historical inspector/eval entrypoints"
+  ]
+}

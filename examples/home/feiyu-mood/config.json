@@ -1,0 +1,11 @@
+{
+  "模式": "session",
+  "slots": [
+    {
+      "id": "main",
+      "sessions": [
+        "session-example"
+      ]
+    }
+  ]
+}

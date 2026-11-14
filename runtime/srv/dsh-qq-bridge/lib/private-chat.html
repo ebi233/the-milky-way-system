@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#182b35"><title>泡泡 · 私人聊天</title><link rel="stylesheet" href="/paopao-private/style.css"><script defer src="/paopao-private/app.js"></script></head>
+<body><main><header><div class="avatar">泡</div><div><h1>泡泡</h1><p id="connection" role="status">正在连接…</p></div><button id="refresh" class="quiet" aria-label="刷新聊天">刷新</button></header>
+<section id="login" hidden><h2>回到泡泡身边</h2><p>请输入私人访问密钥。电脑快捷入口会自动连接。</p><form id="login-form"><input id="key" type="password" autocomplete="off" aria-label="私人访问密钥"><button>连接</button></form></section>
+<section id="messages" aria-label="聊天记录" aria-live="polite"><div class="empty">这里连接的是你原来的泡泡。</div></section>
+<p id="notice" role="status"></p><div id="pending-actions" hidden><button id="retry" type="button">重试这一条</button><button id="resolve" type="button">已核对聊天记录</button></div><div id="previews"></div><form id="composer"><label class="attach" title="添加图片">＋<input id="images" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden></label><textarea id="text" rows="2" placeholder="和泡泡说点什么…" aria-label="消息"></textarea><button id="send" type="submit">发送</button></form><footer>仅你可访问 · 沿用原来的聊天与记忆</footer></main></body></html>

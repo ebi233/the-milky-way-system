@@ -1,0 +1,12 @@
+# dsh-plugin-tavern patch: mounts the runtime glue plugin that materializes the
+# shipped agent presets and scripts into the user root.
+#
+# Why materialization instead of an agentPresets root: this launcher
+# (apps/cli/src/profile-boot.ts) pins the `agent-presets` row's `roots` to the
+# shipped preset directory on every boot, wiping plugin-added roots. The user
+# preset root (~/.dsh/.agent-presets) is appended by the roster itself, so the
+# glue plugin copies the shipped presets there once (marker-guarded, never
+# clobbering user edits) and the roster picks them up on the next read.
+- insert:
+    - id: tavern-tools
+      name: 'dsh-plugin-tavern'

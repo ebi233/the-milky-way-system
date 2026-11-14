@@ -1,0 +1,23 @@
+{
+  "name": "dsh-qq-profile",
+  "version": "1.0.0",
+  "description": "给 DSH 智能体一套改自己 QQ 资料的工具：昵称 / 签名 / 头像 / 在线状态 / 点赞 / 好友备注（走 NapCat 的 OneBot 接口）",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "license": "MIT",
+  "keywords": ["dsh-plugin", "deepseek-harness", "qq", "napcat", "profile"],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
