@@ -1,21 +1,31 @@
 {
-  "date": "2026-11-14",
-  "scope": "Public source snapshot; offline checks only",
+  "date": "2026-11-15",
+  "scope": "Offline experimental QQ recovery fixes; not deployed",
   "behavior_tests": {
-    "xinghe": 42,
-    "qq": 31,
-    "passed": 73,
-    "failed": 0
+    "qq": {
+      "passed": 42,
+      "failed": 0,
+      "new_regressions": 11,
+      "before_new_failures": 11,
+      "checked_on": "2026-11-15"
+    },
+    "xinghe": {
+      "passed": 42,
+      "checked_on": "2026-11-14",
+      "code_unchanged": true
+    }
   },
-  "syntax_and_content": {
-    "javascript": 208,
-    "python": 37,
-    "json": 23,
-    "checked_files_before_publication_records": 308,
-    "errors": []
-  },
-  "known_instance_identifiers_found": 0,
   "production_modified": false,
   "real_messages_sent": false,
-  "paid_model_calls": 0
+  "paid_model_calls": 0,
+  "syntax_and_content": {
+    "checked": {
+      "javascript": 209,
+      "python": 37,
+      "json": 24,
+      "files": 312
+    },
+    "errors": []
+  },
+  "known_instance_identifiers_found": 0
 }

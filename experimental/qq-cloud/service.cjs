@@ -7,8 +7,10 @@ module.exports=function start(qqRequire){
  const dir='/home/qq/lab',config=JSON.parse(fs.readFileSync(dir+'/transport-config.json','utf8'));
  if(config.account!==ACCOUNT||!/^[a-f0-9]{64}$/.test(config.token))throw Error('INVALID_TRANSPORT_CONFIG');
  let native,login,session,msg,listener,checking=false,quickAttempted=false,fatal=false,recovering=false,recoveryDue=true,mutating=false,historyPending=false,recoveryPeers;
+ let subscriptionGeneration=0;
  const status={account:null,online:false,subscribed:false,phase:'starting',startedAt:Date.now(),lastNativeEventAt:null};
  function detach(){
+  subscriptionGeneration++;
   if(status.subscribed)recoveryPeers=adapter.peers();
   if(listener&&typeof msg?.removeKernelMsgListener==='function')try{msg.removeKernelMsgListener(listener);}catch{}
   status.subscribed=false;session=null;msg=null;listener=null;recoveryDue=true;
@@ -29,9 +31,11 @@ module.exports=function start(qqRequire){
  function shapes(input){return (Array.isArray(input)?input:[input]).filter(m=>m&&adapter.peers().some(p=>p.peerUid===m.peerUid&&p.chatType===m.chatType)).slice(-6).map(m=>({msgId:m.msgId,chatType:m.chatType,peerUin:m.peerUin,senderUin:m.senderUin,senderUidMatchesPeer:m.senderUid===m.peerUid,sendStatus:m.sendStatus,elementTypes:m.elements?.map(e=>e.elementType),textLengths:m.elements?.map(e=>typeof e.textElement?.content==='string'?e.textElement.content.length:null),hasPictures:m.elements?.map(e=>!!e.picElement)}));}
  async function recover(peers){
   ready();if(recovering||historyPending)throw Error('RECOVERY_BUSY');recovering=true;
+  const generation=subscriptionGeneration,historyService=msg;
+  function current(){ready();if(generation!==subscriptionGeneration)throw Error('STALE_RECOVERY_SESSION');}
   try{const r=await reconcile(adapter,(p,n)=>{
-   ready();if(historyPending)throw Error('NATIVE_HISTORY_PENDING');historyPending=true;
-   const pending=Promise.resolve().then(()=>msg.getAioFirstViewLatestMsgs(p,n)).then(r=>{status.lastHistoryShape=shapes(r?.msgList||[]);return r;}).finally(()=>{historyPending=false;});
+   current();if(historyPending)throw Error('NATIVE_HISTORY_PENDING');historyPending=true;
+   const pending=Promise.resolve().then(()=>{current();return historyService.getAioFirstViewLatestMsgs(p,n);}).then(r=>{current();status.lastHistoryShape=shapes(r?.msgList||[]);return r;}).finally(()=>{historyPending=false;});
    return bounded(pending,8000,'NATIVE_HISTORY_TIMEOUT');
   },ACCOUNT,peers);status.lastRecoveryAt=Date.now();return r;}finally{recovering=false;}
  }
@@ -60,8 +64,11 @@ module.exports=function start(qqRequire){
    if(!status.subscribed){
     const candidate=current.getMsgService();
     if(!candidate||typeof candidate.addKernelMsgListener!=='function'){status.phase='message-service-initializing';return;}
+    const generation=++subscriptionGeneration;
     const candidateListener=new Proxy({}, {get:(_t,key)=>typeof key==='string'?value=>{
      if(!['onRecvMsg','onAddSendMsg','onMsgInfoListUpdate'].includes(key))return;
+     // Native removal may fail or already-queued callbacks may arrive after detach.
+     if(generation!==subscriptionGeneration||fatal||!status.online||global.authData?.uin!==ACCOUNT||global.statusData?.disconnect)return;
      status.lastNativeEventAt=Date.now();
      const shape=shapes(value);if(shape.length)status.lastMessageShape={event:key,items:shape};
      if(Array.isArray(value)&&value.length>64){status.nativeBatchOverflow={at:Date.now(),count:value.length};recoveryPeers=adapter.peers();recoveryDue=true;}
@@ -72,8 +79,8 @@ module.exports=function start(qqRequire){
     status.subscriptionCount=(status.subscriptionCount||0)+1;
    }
    status.phase='online';delete status.lastError;
-   if(recoveryDue&&!recovering){recoveryDue=false;void recover(recoveryPeers).catch(e=>{status.recoveryError=String(e.message).slice(0,120);});}
-  }catch(e){status.online=false;status.phase='initializing';status.lastError=String(e.message).slice(0,160);}
+   if(recoveryDue&&!recovering&&!historyPending){recoveryDue=false;void recover(recoveryPeers).catch(e=>{status.recoveryError=String(e.message).slice(0,120);});}
+  }catch(e){detach();status.online=false;status.phase='initializing';status.lastError=String(e.message).slice(0,160);}
   finally{checking=false;}
  }
  function authorized(req){const got=Buffer.from(req.headers.authorization||''),expected=Buffer.from('Bearer '+config.token);return got.length===expected.length&&crypto.timingSafeEqual(got,expected);}
