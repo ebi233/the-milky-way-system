@@ -1,6 +1,6 @@
 {
   "date": "2026-11-15",
-  "scope": "Offline experimental QQ recovery fixes; not deployed",
+  "scope": "Cloud spare-account network-disconnect experiment; production restored; incoming recovery unverified",
   "behavior_tests": {
     "qq": {
       "passed": 42,
@@ -16,16 +16,32 @@
     }
   },
   "production_modified": false,
-  "real_messages_sent": false,
+  "real_messages_sent": true,
   "paid_model_calls": 0,
   "syntax_and_content": {
     "checked": {
       "javascript": 209,
       "python": 37,
       "json": 24,
-      "files": 312
+      "files": 313
     },
     "errors": []
   },
-  "known_instance_identifiers_found": 0
+  "known_instance_identifiers_found": 0,
+  "cloud_experiment": {
+    "round": "reconnect-20261115",
+    "duration_seconds": 344,
+    "process_unchanged": true,
+    "native_send_status": 2,
+    "native_result": 0,
+    "dispatch_attempts": 1,
+    "phone_display_confirmed": false,
+    "offline_incoming_confirmed": false,
+    "rebind_branch_triggered": false,
+    "production_qq_ready": true,
+    "production_manifest_checked": 205,
+    "production_manifest_drift": 0,
+    "production_restart_incident": true,
+    "unattended_recovery_verified": false
+  }
 }
