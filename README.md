@@ -4,7 +4,7 @@
 
 > **来源与署名：**本项目包含派生自 [dsh-qq-bridge](https://github.com/Yuuyuko-uu/dsh-qq-bridge)、[dsh-speak-up](https://github.com/Yuuyuko-uu/dsh-speak-up)、[dsh-feiyu-mood](https://github.com/Yuuyuko-uu/dsh-feiyu-mood)、[dsh-fish-memory](https://github.com/Yuuyuko-uu/dsh-fish-memory)、[dsh-bili-subagent](https://github.com/Yuuyuko-uu/dsh-bili-subagent) 的组件，原作者 **Yuuyuko-uu**。由 **ebi233** 维护泡泡项目的集成与扩展：新增星河七模块、事件与关系分离、个人表达积累、来源校验、会话隔离、有限上下文编译和接入实验。第三方部分保留原署名与许可；详见 [来源及修改说明](docs/ATTRIBUTION.md) 和 [LICENSE](LICENSE)。本项目不将社区插件整体宣称为从零原创。
 
-[星河工作原理](docs/XINGHE.md) · [全部系统与功能](docs/SYSTEMS.md) · [部署与配置](docs/SETUP.md) · [验收与限制](docs/STATUS.md) · [隐私与发布范围](docs/PRIVACY.md)
+[星河工作原理](docs/XINGHE.md) · [全部系统与功能](docs/SYSTEMS.md) · [贴吧与自主关注](docs/TIEBA.md) · [部署与配置](docs/SETUP.md) · [验收与限制](docs/STATUS.md) · [隐私与发布范围](docs/PRIVACY.md)
 
 ## 星河是什么
 
@@ -36,7 +36,7 @@
 | 人格与上下文 | 完整人格版本、摘要来源检查、维护消息隔离、回复诊断 | `runtime/srv/dsh-qq-ext/dsh-persona-integrity/` |
 | 模型分流与费用控制 | 聊天/后台模型分流、显式推理档位、按需工具和上下文整理 | `dsh-creative-sampling/`、`dsh-token-economy/` |
 | 视觉、图片与语音 | 图片来源/会话检查、识图、生成需求交接、成图回执、ASR/TTS 连接 | `dsh-vision/`、`dsh-draw/`、`runtime/srv/dsh-voice/` |
-| 兴趣和公开内容 | B 站阅读、浏览记录、公开内容探索、短媒体辅助节点 | `dsh-public-social/`、`dsh-bili-subagent/`、`dsh-short-media/` |
+| 兴趣和公开内容 | B 站阅读、贴吧自主阅读列表、温和用语筛选、来源记录、短媒体辅助节点 | `dsh-public-social/`、`dsh-bili-subagent/`、`dsh-short-media/` |
 | 私人网页入口 | 专用鉴权、可见消息和图片、待确认发送记录，网页回复不重复发 QQ | `dsh-qq-bridge/lib/private-chat*` |
 | 独立云端 QQ 实验 | 腾讯原生客户端适配、固定接口、文字/图片、有限补收和去重 | `experimental/qq-cloud/` |
 
@@ -69,9 +69,11 @@ npm test
 
 检查使用 Node.js 22+ 与 Python 3.10+；无需安装 npm 依赖，不访问模型、不发送 QQ、不需要账号密钥。完整宿主运行仍依赖 DSH、对应插件依赖及外部服务，不能把测试命令当成完整安装命令。
 
-这是 **2026-11-14 核对当前云端代码后整理的公开快照**，不是包含私人数据的整机备份，也不是已经验证的一键安装发行版。公开配置保留聊天 **Flash/max** 的显式示例；真实账号和登录凭证由部署者在本机配置。
+这是 **2026-11-14 整理、更新至 2026-11-16 的公开代码快照**，不是包含私人数据的整机备份，也不是已经验证的一键安装发行版。公开配置保留聊天 **Flash/max** 的显式示例；真实账号和登录凭证由部署者在本机配置。可选的实际贴吧读取组件另外需要 Python 3.11+ 与 aiotieba 4.8.4；离线检查无需安装该依赖。
 
 ## 实际进度
+
+2026-11-16：贴吧匿名只读接入已部署，复用 aiotieba 4.8.4；新增自主阅读关注列表、两级内容筛选及表达库接线。云端公开读取成功，关注/收藏/权限等隔离检查通过；尚未验证长期表达改善，也未声称泡泡已经自行选择兴趣或学习到新风格。见 [功能说明](docs/TIEBA.md) 与 [本轮实测](docs/TIEBA-20261116.md)。
 
 2026-11-15：独立 QQ 实验完成一轮重连与补收修复，42 项隔离检查通过；随后已安装至云端备用号实验环境，完成约 344 秒真实断网及恢复后原生发送验证；断网来信补收仍待验收。实验已停止、原服务已恢复。见 [云端实测边界](docs/CLOUD-RECONNECT-20261115.md) 及 [本轮优化测试报告](docs/OPTIMIZATION-20261115.md)。
 

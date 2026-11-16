@@ -1,0 +1,2 @@
+# Optional anonymous public reading backend; upstream license: Unlicense.
+aiotieba==4.8.4

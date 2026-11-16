@@ -14,6 +14,7 @@
 | Bilibili MCP vendor | AGI_Ananas | vendor 内保留完整许可，不改写作者 |
 | Garden vendor | CyanCat22 | garden-upstream 内保留 LICENSE 与 NOTICE |
 | Screen capture vendor | see-now vendor | 保留 Apache-2.0 LICENSE、NOTICE、SOURCE.md |
+| 贴吧读取依赖 | [lumina37/aiotieba](https://github.com/lumina37/aiotieba)，v4.8.4，Unlicense | 作为外部 Python 依赖复用组包和解析；本项目新增只读 HTTPS 传输、内容审查与阅读关注列表。不内置库源码或二进制 |
 
 本项目集成层新增/扩展：星河七模块、事件评估与长期关系分离、可追溯记忆与联想、个人表达积累、人格版本与上下文保护、资源受限运维、接入实验等。各项实际状态见 STATUS.md；不把这些扩展等同于重写 DSH、QQ 或全部社区模块。
 

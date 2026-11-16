@@ -1,47 +1,56 @@
 {
-  "date": "2026-11-15",
-  "scope": "Cloud spare-account network-disconnect experiment; production restored; incoming recovery unverified",
+  "date": "2026-11-16",
+  "scope": "Tieba anonymous reading and self-managed forum subscriptions",
   "behavior_tests": {
-    "qq": {
-      "passed": 42,
-      "failed": 0,
-      "new_regressions": 11,
-      "before_new_failures": 11,
-      "checked_on": "2026-11-15"
+    "tieba_node": {
+      "passed": 22,
+      "failed": 0
+    },
+    "tieba_python": {
+      "passed": 10,
+      "failed": 0
     },
     "xinghe": {
       "passed": 42,
-      "checked_on": "2026-11-14",
-      "code_unchanged": true
+      "failed": 0,
+      "checked_on": "2026-11-16"
+    },
+    "qq": {
+      "passed": 42,
+      "checked_on": "2026-11-15",
+      "code_unchanged": true,
+      "rerun_this_round": false
     }
   },
-  "production_modified": false,
-  "real_messages_sent": true,
-  "paid_model_calls": 0,
+  "production_modified": true,
+  "real_messages_sent": false,
+  "maintenance_paid_model_calls": 0,
   "syntax_and_content": {
     "checked": {
-      "javascript": 209,
-      "python": 37,
-      "json": 24,
-      "files": 313
+      "javascript": 213,
+      "python": 39,
+      "json": 25,
+      "files": 323
     },
     "errors": []
   },
   "known_instance_identifiers_found": 0,
-  "cloud_experiment": {
-    "round": "reconnect-20261115",
-    "duration_seconds": 344,
-    "process_unchanged": true,
-    "native_send_status": 2,
-    "native_result": 0,
-    "dispatch_attempts": 1,
-    "phone_display_confirmed": false,
-    "offline_incoming_confirmed": false,
-    "rebind_branch_triggered": false,
-    "production_qq_ready": true,
-    "production_manifest_checked": 205,
-    "production_manifest_drift": 0,
-    "production_restart_incident": true,
-    "unattended_recovery_verified": false
-  }
+  "cloud": {
+    "anonymous_api_read": true,
+    "sample_posts": 3,
+    "model_semantic_review_real_sample_verified": false,
+    "model_self_selection_observed": false,
+    "long_term_style_improvement_verified": false,
+    "qq_ready": true,
+    "managed_files": 208,
+    "manifest_drift": 0,
+    "napcat_restarted": false,
+    "existing_daily_budget_preserved": true
+  },
+  "local_standby": {
+    "code_synced": true,
+    "managed_files": 193,
+    "started": false
+  },
+  "previous_qq_offline_recovery_verified": false
 }

@@ -1,6 +1,6 @@
 {
   "name": "the-milky-way-system",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "星河系统：基于 DSH 与社区插件扩展的持续状态、事件理解、记忆、关系与个人表达系统。",
@@ -28,8 +28,9 @@
   },
   "scripts": {
     "check": "python tools/check_publication.py",
-    "test": "npm run check && npm run test:xinghe && npm run test:qq",
+    "test": "npm run check && npm run test:xinghe && npm run test:qq && npm run test:tieba",
     "test:xinghe": "node --test --test-concurrency=1 tests/appraisal.test.mjs tests/followup.test.mjs tests/format.test.mjs tests/growth.test.mjs",
-    "test:qq": "node --test --test-concurrency=1 experimental/qq-cloud/test-adapter.cjs experimental/qq-cloud/test-private.cjs experimental/qq-cloud/test-service.cjs experimental/qq-cloud/test-media-recovery.cjs experimental/qq-cloud/test-http.cjs experimental/qq-cloud/test-resilience.cjs"
+    "test:qq": "node --test --test-concurrency=1 experimental/qq-cloud/test-adapter.cjs experimental/qq-cloud/test-private.cjs experimental/qq-cloud/test-service.cjs experimental/qq-cloud/test-media-recovery.cjs experimental/qq-cloud/test-http.cjs experimental/qq-cloud/test-resilience.cjs",
+    "test:tieba": "node --test tests/tieba.test.mjs tests/tieba-owner.test.mjs && python tests/test_tieba_reader.py"
   }
 }

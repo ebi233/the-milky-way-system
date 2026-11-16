@@ -47,5 +47,7 @@
     "third-party binaries, models, node_modules",
     "old deploy backups and live diagnostics",
     "historical inspector/eval entrypoints"
-  ]
+  ],
+  "updated": "2026-11-16",
+  "tieba_publication": "Source and synthetic tests only; no fetched forum corpus, follow preferences, private diagnostics, dependency wheels or runtime state"
 }

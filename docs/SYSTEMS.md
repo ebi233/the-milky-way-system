@@ -36,6 +36,8 @@ QQ 正式桥接使用 OneBot/NapCat；独立原生服务是单独实验，不自
 
 ## 建议阅读顺序
 
+贴吧与自主阅读关注新增在 `dsh-public-social/tieba-source.mjs`、`tieba-follows.mjs` 和 `tieba-api-reader.py`，通过 `dsh-long-memory/lib/expression-library.mjs` 连接已有表达库。功能和权限边界见 [贴吧说明](TIEBA.md)。
+
 1. `dsh-tidal/state-kernel.mjs`、`core.mjs`：状态和当前参考。
 2. `dsh-tidal/appraisal-core.mjs`、`appraisal.mjs`：事件、关系与调用去重。
 3. `dsh-tidal/memory.mjs`、`association.mjs`：来源与关联。

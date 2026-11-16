@@ -22,9 +22,10 @@ export function safePublicText(v,max=500){
   return !/(?:[\x00-\x08\x0b\x0c\x0e-\x1f]|\[CQ:|<script|ignore.{0,15}instructions|system.?prompt|API.?KEY|私聊|聊天记录|成人内容|做爱|精液|性交|色情|裸体|裸照|性器|约炮|口交|操逼|肉棒|自慰|调教|主人|老公|老婆|宝宝|宝贝)/i.test(v);
 }
 export function validateCandidate(v,at=Date.now()) {
-  return v?.publicSource===true&&v?.safePublic===true&&!!canonicalSource(v.id)&&v.url===canonicalSource(v.id)&&safePublicText(v.title,300)&&safePublicText(v.observation,450)&&Number.isFinite(v.observedAt)&&v.observedAt<=at&&at-v.observedAt<48*3600000;
+  return v?.platform!=='tieba'&&!String(v?.id).startsWith('tieba:')&&v?.publicSource===true&&v?.safePublic===true&&!!canonicalSource(v.id)&&v.url===canonicalSource(v.id)&&safePublicText(v.title,300)&&safePublicText(v.observation,450)&&Number.isFinite(v.observedAt)&&v.observedAt<=at&&at-v.observedAt<48*3600000;
 }
 export function canonicalSource(id){
+  if(/^tieba:[1-9][0-9]{4,19}$/.test(id||''))return 'https://tieba.baidu.com/p/'+id.split(':')[1];
   if(/^BV[0-9A-Za-z]{10}$/.test(id||''))return 'https://www.bilibili.com/video/'+id;
   if(/^xiaohongshu:[0-9a-f]{24}$/.test(id||''))return 'https://www.xiaohongshu.com/explore/'+id.split(':')[1];
   if(/^douyin:[0-9]{10,25}$/.test(id||''))return 'https://www.douyin.com/video/'+id.split(':')[1];
