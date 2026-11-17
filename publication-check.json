@@ -1,9 +1,10 @@
 {
   "date": "2026-11-17",
-  "scope": "Interactive Tieba reading, cached evidence and canonical forum identity repair",
+  "version": "0.1.4",
+  "scope": "Continuous Tieba reading without daily quotas, paginated forum traversal and persistent reviewed corpus",
   "behavior_tests": {
     "tieba_node": {
-      "passed": 33,
+      "passed": 41,
       "failed": 0
     },
     "tieba_python": {
@@ -23,33 +24,42 @@
   },
   "production_modified": true,
   "real_messages_sent": false,
-  "maintenance_paid_model_calls": 0,
   "syntax_and_content": {
     "checked": {
-      "javascript": 215,
+      "javascript": 216,
       "python": 40,
       "json": 25,
-      "files": 327
+      "files": 329
     },
     "errors": []
   },
   "known_instance_identifiers_found": 0,
   "cloud": {
     "qq_ready": true,
-    "managed_files": 209,
+    "managed_files": 210,
     "manifest_drift": 0,
     "interactive_service_bound": true,
-    "actual_expression_tool_cached_excerpts": 3,
-    "canonical_alias_real_read_posts": 2,
-    "model_used_new_tool_after_patch_verified": false,
+    "continuous_learning": true,
+    "daily_quotas": false,
+    "counts_not_reset": true,
+    "browse_today_at_check": 14,
+    "model_calls_today_at_check": 9,
+    "accounted_tokens_today_at_check": 6273,
+    "reviewed_corpus_at_check": {
+      "threads": 4,
+      "excerpts": 11
+    },
+    "actual_expression_tool_items": 8,
+    "background_live_review_used_model_calls": true,
+    "model_autonomous_adoption_after_patch_verified": false,
     "long_term_style_improvement_verified": false,
-    "napcat_restarted": false,
-    "daily_budget_reset": false
+    "napcat_restarted": false
   },
   "local_standby": {
     "code_synced": true,
-    "managed_files": 194,
-    "started": false
+    "managed_files": 195,
+    "started": false,
+    "configuration_enabled_unchanged": true
   },
   "previous_qq_offline_recovery_verified": false
 }

@@ -1,8 +1,8 @@
 {
   "enabled": true,
-  "browseDailyLimit": 6,
-  "modelDailyLimit": 8,
-  "tokenDailyLimit": 24000,
+  "browseDailyLimit": null,
+  "modelDailyLimit": null,
+  "tokenDailyLimit": null,
   "postDailyLimit": 2,
   "postCooldownMinutes": 240,
   "checkMinMinutes": 30,
@@ -10,5 +10,6 @@
   "platforms": [
     "bilibili",
     "tieba"
-  ]
+  ],
+  "continuousLearning": true
 }

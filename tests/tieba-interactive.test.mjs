@@ -85,3 +85,54 @@ test('service absence is explicit; lifecycle attach/dispose connects actual tool
  assert.equal(tiebaReadingStatus(home).serviceReady,true);const status=await expressionLibrary(agent,{action:'reading_status'});assert.equal(status.reading.serviceReady,true);
  for(const f of cleanup)f();for(const f of events)f();assert.equal(tiebaReadingStatus(home).serviceReady,false);
 });
+
+const {archiveCard,corpusStats,corpusMaterials}=await import(pathToFileURL(join(dir,'tieba-corpus.mjs')));
+const {recordCard,history}=await import(pathToFileURL(join(dir,'browse-history.mjs')));
+const {approvedTieba}=await import(pathToFileURL(join(dir,'tieba-source.mjs')));
+const unlimited=()=>save('public-social/config.json',{enabled:true,platforms:['tieba'],continuousLearning:true,browseDailyLimit:null,modelDailyLimit:null,tokenDailyLimit:null});
+test('null daily quotas permit a real reviewed read after all old limits were exceeded',async()=>{
+ const s=setup({browseCount:600,modelCount:800,tokens:2400000});unlimited();
+ const r=await browse();assert.equal(r.reading.freshRead,true);assert.deepEqual(r.reading.remaining,{browse:null,modelCalls:null,tokens:null});assert.equal(r.reading.dailyQuotas,false);assert.equal(s.calls,1);
+ assert.equal(s.social.status().browseToday,601);assert.equal(s.social.status().modelCallsToday,801);assert.ok(s.social.status().accountedTokensToday>2400000);
+});
+test('continuous worker advances slots and listing pages, rotating forums without daily caps',async()=>{
+ setup();unlimited();let clock=time;const visits=[];
+ const s=createSocial({home,now:()=>clock,tieba:async(h,signal,c,seen,opts)=>{visits.push(opts);throw Error('filtered')},llm:{},publish:()=>assert.fail('publish')});
+ for(let i=0;i<9;i++){await s.tickLearning();clock+=60001;}
+ assert.equal(visits.length,36);assert.deepEqual(visits.slice(0,3).map(x=>x.forum),['多肉','花卉','烘焙']);assert.ok(visits.some(x=>x.page===2));assert.equal(s.status().browseToday,36);s.stop();
+});
+test('one restricted forum backs off while other forums continue',async()=>{
+ setup();unlimited();const visits=[];
+ const s=createSocial({home,now:()=>time,tieba:async(h,signal,c,seen,opts)=>{visits.push(opts.forum);throw Error(opts.forum==='多肉'?'platform_restricted':'filtered')},llm:{}});
+ await s.tickLearning();assert.equal(visits.filter(x=>x==='多肉').length,1);assert.equal(visits.length,4);assert.ok(s.readingStatus().forumProgress['多肉'].retryAfter>time);assert.equal(s.readingStatus().retryAfter, null);s.stop();
+});
+test('empty later listing returns to recent posts with backoff rather than looping on an empty page',async()=>{
+ setup();unlimited();const s=createSocial({home,now:()=>time,tieba:async()=>{throw Error('listing_empty')},llm:{}});
+ await s.tickLearning();for(const p of Object.values(s.readingStatus().forumProgress)){assert.equal(p.page,1);assert.equal(p.offset,0);assert.ok(p.retryAfter>time)}s.stop();
+});
+test('continuous scheduler and owner request share one lock; stopping prevents review',async()=>{
+ setup();unlimited();let done;const wait=new Promise(r=>done=r);let calls=0;
+ const s=createSocial({home,now:()=>time,tieba:async()=>{await wait;return normalizeTieba(raw,'花卉')},llm:{async *stream(){calls++;yield {text:JSON.stringify(accept)}}}});
+ const pending=s.tickLearning();assert.equal((await s.readNow({forum:'花卉'})).outcome,'busy');s.stop();done();await pending;assert.equal(calls,0);assert.equal(corpusStats(home).threads,0);
+});
+test('reviewed corpus survives cache eviction and a week, is deduplicated, and old quotes remain learnable',async()=>{
+ setup();const now=Date.now()-8*86400000;let first;
+ for(let i=0;i<85;i++){
+  const card={...approvedTieba(normalizeTieba({...raw,id:'tieba:'+(123456789+i)},'花卉'),accept),at:now+i};
+  archiveCard(home,card);archiveCard(home,card);recordCard(home,card,{},card.at);if(i===0)first=corpusMaterials(home)[0];
+ }
+ assert.equal(history(home).items.length,80);assert.deepEqual(corpusStats(home),{threads:85,excerpts:85});
+ const result=await expressionLibrary(agent,{action:'learn',sourceKind:'public_excerpt',sourceId:first.id,quote:first.records[0].text,scene:'daily',lesson:'留意眼前的小变化'});assert.equal(result.entry.status,'candidate');
+ assert.equal(archiveCard(home,{...raw,platform:'tieba',at:now}),false);
+});
+test('tool pagination returns every same-timestamp excerpt without gaps',async()=>{
+ setup();for(let i=0;i<12;i++)archiveCard(home,{...approvedTieba(normalizeTieba({...raw,id:'tieba:'+(223456789+i)},'花卉'),accept),at:time-1000});
+ const ids=[];let cursor={};for(let i=0;i<4;i++){
+  const r=await expressionLibrary(agent,{action:'materials',platform:'tieba',limit:5,...cursor});ids.push(...r.items.map(x=>x.id));if(!r.items.length)break;cursor={beforeAt:r.nextBeforeAt,beforeId:r.nextBeforeId};
+ }
+ assert.equal(ids.length,12);assert.equal(new Set(ids).size,12);
+});
+test('transport forwards validated pagination and refuses invalid pages before launching',async()=>{
+ setup();await readTieba(home,null,0,[],{forum:'花卉',page:4,offset:7,runner:(file,args,opts,cb)=>{const req=JSON.parse(args[1]);assert.equal(req.page,4);assert.equal(req.offset,7);cb(null,JSON.stringify(raw))}});
+ for(const options of [{page:0},{page:'2'},{offset:10},{offset:-1}])await assert.rejects(readTieba(home,null,0,[],{...options,runner:()=>assert.fail('unexpected launch')}),/invalid_source/);
+});

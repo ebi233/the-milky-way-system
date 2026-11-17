@@ -16,7 +16,7 @@ for directory, dirs, names in os.walk(ROOT):
         p = Path(directory)/name
         rel = p.relative_to(ROOT).as_posix()
         counts['files'] += 1
-        if p.is_symlink() or '.private' in rel or name in {'.env','.web-token','transport-config.json','persona.md'} or p.suffix in {'.db','.pem','.key','.log'}:
+        if p.is_symlink() or '.private' in rel or name in {'.env','.web-token','transport-config.json','persona.md'} or p.suffix in {'.db','.sqlite','.sqlite3','.pem','.key','.log'}:
             errors.append(f'Private/runtime file in publication: {rel}')
         try: text = p.read_text(encoding='utf8')
         except UnicodeError:

@@ -50,5 +50,6 @@
   ],
   "updated": "2026-11-17",
   "tieba_publication": "Source and synthetic tests only; no fetched forum corpus, follow preferences, private diagnostics, dependency wheels or runtime state",
-  "tieba_followup_publication": "Generic source, synthetic tests and redacted report only; no session transcript, personal interests, runtime stores or raw diagnostic posts"
+  "tieba_followup_publication": "Generic source, synthetic tests and redacted report only; no session transcript, personal interests, runtime stores or raw diagnostic posts",
+  "tieba_continuous_publication": "Generic runtime, anonymous examples, synthetic tests and redacted verification only. No actual corpus, interests, raw posts, sessions or credentials."
 }

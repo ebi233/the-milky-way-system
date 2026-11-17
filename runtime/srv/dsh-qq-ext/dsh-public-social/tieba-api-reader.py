@@ -9,9 +9,10 @@ from types import SimpleNamespace
 MAX_BYTES=1024*1024
 class ReadError(Exception):pass
 
-def select_thread(threads,forum,seen):
+def select_thread(threads,forum,seen,offset=0):
     if threads.forum.fname!=forum:raise ReadError('source_mismatch')
-    for t in list(threads)[:15]:
+    if not list(threads):raise ReadError('listing_empty')
+    for t in list(threads)[offset:10]:
         if not isinstance(t.tid,int) or not re.fullmatch(r'[1-9][0-9]{4,19}',str(t.tid)):continue
         if t.is_top or t.is_hide or t.reply_num<1 or 'tieba:'+str(t.tid) in seen:continue
         return t.tid
@@ -62,7 +63,8 @@ def project_resolved(posts,requested,canonical,fid,tid):
     result=project_posts(posts,canonical,tid)
     return {**result,'forum':requested,'resolvedForum':canonical,'forumId':fid}
 
-async def read_forum(forum,seen):
+async def read_forum(forum,seen,page=1,offset=0):
+    if type(page) is not int or not 1<=page<=10000 or type(offset) is not int or not 0<=offset<10:raise ReadError('invalid_source')
     if not isinstance(forum,str) or not 1<=len(forum)<=24 or not re.fullmatch(r'[\w ·-]+',forum) or not isinstance(seen,list) or len(seen)>200:raise ReadError('invalid_source')
     import aiohttp,aiotieba
     from aiotieba.api.get_threads import _api as threads_api
@@ -73,15 +75,15 @@ async def read_forum(forum,seen):
     async with asyncio.timeout(16):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=7,connect=3),trust_env=False,cookie_jar=aiohttp.DummyCookieJar(),headers={'User-Agent':'aiotieba/4.8.4 XinghePublicReader/0.1','x_bd_data_type':'protobuf'}) as session:
             core=ReadTransport(session)
-            threads=await threads_api.request_http(core,forum,1,10,1,False,LEGACY_VERSION)
+            threads=await threads_api.request_http(core,forum,page,10,1,False,LEGACY_VERSION)
             canonical,fid=resolve_forum(threads,forum)
-            tid=select_thread(threads,canonical,seen)
+            tid=select_thread(threads,canonical,seen,offset)
             posts=await posts_api.request_http(core,tid,1,20,0,False,False,True,0)
-            return project_resolved(posts,forum,canonical,fid,tid)
+            return {**project_resolved(posts,forum,canonical,fid,tid),'listingPage':page}
 
 def main():
     try:
-        req=json.loads(sys.argv[1]);result=asyncio.run(read_forum(req['forum'],req.get('seen',[])))
+        req=json.loads(sys.argv[1]);result=asyncio.run(read_forum(req['forum'],req.get('seen',[]),req.get('page',1),req.get('offset',0)))
     except ReadError as e:result={'status':str(e)}
     except (TimeoutError,asyncio.TimeoutError):result={'status':'timeout'}
     except ImportError:result={'status':'dependency_unavailable'}

@@ -1,6 +1,6 @@
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
-export const defaults={enabled:true,browseDailyLimit:6,modelDailyLimit:8,tokenDailyLimit:24000,postDailyLimit:2,postCooldownMinutes:240,checkMinMinutes:30,checkMaxMinutes:90,maxCandidateAgeHours:48};
+export const defaults={enabled:true,continuousLearning:false,browseDailyLimit:6,modelDailyLimit:8,tokenDailyLimit:24000,postDailyLimit:2,postCooldownMinutes:240,checkMinMinutes:30,checkMaxMinutes:90,maxCandidateAgeHours:48};
 export const dayKey=at=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(at));
 export const hour=at=>Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Shanghai',hour:'2-digit',hourCycle:'h23'}).format(new Date(at)));
 export function read(file,fallback){try{return JSON.parse(readFileSync(file,'utf8'))}catch{return fallback}}
