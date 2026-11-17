@@ -48,6 +48,7 @@
     "old deploy backups and live diagnostics",
     "historical inspector/eval entrypoints"
   ],
-  "updated": "2026-11-16",
-  "tieba_publication": "Source and synthetic tests only; no fetched forum corpus, follow preferences, private diagnostics, dependency wheels or runtime state"
+  "updated": "2026-11-17",
+  "tieba_publication": "Source and synthetic tests only; no fetched forum corpus, follow preferences, private diagnostics, dependency wheels or runtime state",
+  "tieba_followup_publication": "Generic source, synthetic tests and redacted report only; no session transcript, personal interests, runtime stores or raw diagnostic posts"
 }

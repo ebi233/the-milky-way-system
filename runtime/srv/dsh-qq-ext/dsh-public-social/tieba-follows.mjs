@@ -3,7 +3,7 @@ import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {safePublicText} from './social-policy.mjs';
 export const initialForums=['多肉','花卉','烘焙'];
-export function validForum(v){return typeof v==='string'&&v===v.trim()&&v.length>=2&&v.length<=24&&/^[\p{L}\p{N} ·_-]+$/u.test(v)&&safePublicText(v,24)&&!/(傻[逼比b]|脑残|辱骂|色情|约炮|纳粹|仇恨|nmsl|fuck|sex|操你|艹)/i.test(v.normalize('NFKC'));}
+export function validForum(v){return typeof v==='string'&&v===v.trim()&&v.length>=1&&v.length<=24&&/^[\p{L}\p{N} ·_-]+$/u.test(v)&&safePublicText(v,24)&&!/(傻[逼比b]|脑残|辱骂|色情|约炮|纳粹|仇恨|nmsl|fuck|sex|操你|艹)/i.test(v.normalize('NFKC'));}
 function safe(path,dir=false){try{const s=lstatSync(path);if(s.isSymbolicLink()||(dir?!s.isDirectory():!s.isFile()||s.size>32768))throw Error('FOLLOW_STORE_UNSAFE')}catch(e){if(e.code!=='ENOENT')throw e}}
 export function forumChoices(home){
  const dir=join(home,'public-social'),file=join(dir,'tieba-follows.json');safe(dir,true);safe(file);

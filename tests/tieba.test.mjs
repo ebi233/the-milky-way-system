@@ -26,7 +26,7 @@ test('aborted work never starts reader',async()=>{const c=new AbortController();
 // Replace only host services in a disposable fixture; exercise the actual scheduler and store code.
 const fixture=fs.mkdtempSync(join(tmpdir(),'tieba-social-test-'));
 const source=fileURLToPath(new URL('../runtime/srv/dsh-qq-ext/dsh-public-social/',import.meta.url));
-for(const name of ['tieba-source.mjs','tieba-follows.mjs','browse-history.mjs','social-policy.mjs'])fs.copyFileSync(join(source,name),join(fixture,name));
+for(const name of ['tieba-source.mjs','tieba-follows.mjs','browse-history.mjs','social-policy.mjs','tieba-service.mjs'])fs.copyFileSync(join(source,name),join(fixture,name));
 let index=fs.readFileSync(join(source,'index.mjs'),'utf8');
 index=index.replace(/^import \{BlockAssembler\}.*$/m,`class BlockAssembler {constructor(){this.finish={kind:'stop'};this.usage={inputTokens:40,outputTokens:30};this.text=''}push(c){this.text+=c.text}blocks(){return [{type:'text',text:this.text}]}}`)
 .replace(/^import \{readPublicBili\}.*$/m,"const readPublicBili=()=>{throw Error('unexpected bili')};")

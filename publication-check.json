@@ -1,19 +1,18 @@
 {
-  "date": "2026-11-16",
-  "scope": "Tieba anonymous reading and self-managed forum subscriptions",
+  "date": "2026-11-17",
+  "scope": "Interactive Tieba reading, cached evidence and canonical forum identity repair",
   "behavior_tests": {
     "tieba_node": {
-      "passed": 22,
+      "passed": 33,
       "failed": 0
     },
     "tieba_python": {
-      "passed": 10,
+      "passed": 15,
       "failed": 0
     },
     "xinghe": {
       "passed": 42,
-      "failed": 0,
-      "checked_on": "2026-11-16"
+      "failed": 0
     },
     "qq": {
       "passed": 42,
@@ -27,29 +26,29 @@
   "maintenance_paid_model_calls": 0,
   "syntax_and_content": {
     "checked": {
-      "javascript": 213,
-      "python": 39,
+      "javascript": 215,
+      "python": 40,
       "json": 25,
-      "files": 323
+      "files": 327
     },
     "errors": []
   },
   "known_instance_identifiers_found": 0,
   "cloud": {
-    "anonymous_api_read": true,
-    "sample_posts": 3,
-    "model_semantic_review_real_sample_verified": false,
-    "model_self_selection_observed": false,
-    "long_term_style_improvement_verified": false,
     "qq_ready": true,
-    "managed_files": 208,
+    "managed_files": 209,
     "manifest_drift": 0,
+    "interactive_service_bound": true,
+    "actual_expression_tool_cached_excerpts": 3,
+    "canonical_alias_real_read_posts": 2,
+    "model_used_new_tool_after_patch_verified": false,
+    "long_term_style_improvement_verified": false,
     "napcat_restarted": false,
-    "existing_daily_budget_preserved": true
+    "daily_budget_reset": false
   },
   "local_standby": {
     "code_synced": true,
-    "managed_files": 193,
+    "managed_files": 194,
     "started": false
   },
   "previous_qq_offline_recovery_verified": false

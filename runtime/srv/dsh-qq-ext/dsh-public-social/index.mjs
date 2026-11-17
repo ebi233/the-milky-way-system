@@ -10,7 +10,8 @@ import {browseBrowser} from './browser-source.mjs';
 import {readBiliDepth} from './bili-depth.mjs';
 import {history,recordCard,depthDiagnostics} from './browse-history.mjs';
 import {readTieba,approvedTieba,tiebaReviewPrompt,tiebaPolicy} from './tieba-source.mjs';
-import {forumChoices} from './tieba-follows.mjs';
+import {forumChoices,validForum} from './tieba-follows.mjs';
+import {bindTiebaService,tiebaReadingStatus} from './tieba-service.mjs';
 export const name='paopao-public-social';
 export const inject=['llm','webServer'];
 function write(file,v){mkdirSync(join(file,'..'),{recursive:true,mode:0o700});const temp=file+'.'+randomUUID()+'.tmp';writeFileSync(temp,JSON.stringify(v)+'\n',{mode:0o600});renameSync(temp,file)}
@@ -72,34 +73,40 @@ export function createSocial({home,llm,now=Date.now,random=Math.random,fetchPubl
     const u=assembler.usage;if(u){const used=Number(u.inputTokens||0)+Number(u.cacheReadTokens||0)+Number(u.outputTokens||0);if(Number.isFinite(used)&&used>0)s.tokens+=used-reserved;save(s)}
     return parseDecision(assembler.blocks().filter(b=>b.type==='text').map(b=>b.text).join(''));
   }
-  async function browse(s,c,signal){
+  async function browse(s,c,signal,requestedForum){
     const cursor=Number(s.browseCursor)||0;
     const order=c.platforms.map((_,i)=>c.platforms[(cursor+i)%c.platforms.length]);
-    const platform=order.find(p=>Number(s.platformStatus?.[p]?.retryAfter||0)<=now());
+    const platform=requestedForum?'tieba':order.find(p=>Number(s.platformStatus?.[p]?.retryAfter||0)<=now());
     if(!platform){s.lastOutcome='sources_in_backoff';save(s);return}
-    s.browseCursor=cursor+order.indexOf(platform)+1;
+    if(!requestedForum)s.browseCursor=cursor+order.indexOf(platform)+1;
     s.browseCount++;s.lastBrowsePlatform=platform;s.platformStatus||={};s.platformStatus[platform]={...s.platformStatus[platform],lastAttemptAt:now(),outcome:'reading'};save(s);
     let source;
     try{
-      if(platform==='tieba')source=await tieba(home,signal,Math.floor(cursor/c.platforms.length),s.seen);
+      if(platform==='tieba'){
+        const choices=forumChoices(home).forums.map(x=>x.name);
+        const forum=requestedForum||choices[Math.floor(cursor/c.platforms.length)%choices.length];
+        if(!forum)throw Error('no_followed_forums');
+        s.platformStatus.tieba.lastAttemptForum=forum;save(s);
+        source=await tieba(home,signal,Math.floor(cursor/c.platforms.length),s.seen,{forum});
+      }
       else if(platform==='bilibili')source=await biliSource(s,signal);
       else{
         const entries=await browser(home,platform,signal,Math.floor(cursor/c.platforms.length));
         source=entries.find(item=>!s.seen.includes(item.id));
       }
-      if(!source)throw Error('no_new_public_material');
+      signal?.throwIfAborted();if(!source)throw Error('no_new_public_material');
       s.seen=[...s.seen,source.id].slice(-200);
       if(platform==='tieba'){
         save(s); // Reserve source and model budget before review; unsafe text is never persisted.
         const choice=await decide(s,c,tiebaReviewPrompt,source,signal);
-        source=approvedTieba(source,choice);
+        signal?.throwIfAborted();source=approvedTieba(source,choice);
         if(!source)throw Error('filtered');
       }
-      s.platformStatus[platform]={lastAttemptAt:now(),lastSuccessAt:now(),outcome:'read',retryAfter:0};
+      s.platformStatus[platform]={...s.platformStatus[platform],lastAttemptAt:now(),lastSuccessAt:now(),outcome:'read',retryAfter:0};
       s.observations=[{id:source.id,platform,title:source.title,url:source.url,at:now(),evidence:source.evidence||'public_title_description_only'},...(s.observations||[])].slice(0,24);save(s);
       source.platform=platform;record(source,{outcome:'read'});
     }catch(e){
-      const known=['filtered','no_followed_forums','platform_restricted','read_failed','result_limit','unavailable','DAILY_MODEL_BUDGET','local_browser_offline','extension_required','timeout','busy','cooldown','browser_unavailable','verification_required','login_required','no_rendered_results','no_new_public_material'];
+      const known=['dependency_unavailable','dependency_version','source_mismatch','invalid_source','request_limit','reader_permission_denied','reader_missing','filtered','no_followed_forums','platform_restricted','read_failed','result_limit','unavailable','DAILY_MODEL_BUDGET','local_browser_offline','extension_required','timeout','busy','cooldown','browser_unavailable','verification_required','login_required','no_rendered_results','no_new_public_material'];
       const outcome=known.includes(e.message)?e.message:'source_read_failed';
       s.platformStatus[platform]={...s.platformStatus[platform],outcome,retryAfter:now()+(['verification_required','login_required','platform_restricted'].includes(outcome)?6:1)*3600000};
       s.lastOutcome=platform+':'+outcome;save(s);return;
@@ -145,6 +152,39 @@ export function createSocial({home,llm,now=Date.now,random=Math.random,fetchPubl
     try{signal.throwIfAborted();const receipt=await publish(text.trim()+'\n'+item.url,signal);s.lastOutcome='published';s.lastPostedAt=now();s.lastReceipt=String(typeof receipt==='string'?receipt:receipt?.tid||receipt?.id||'confirmed').slice(0,100);save(s);record(item,{delivery:'published',deliveryAt:now()})}
     catch{s.lastOutcome='publish_unconfirmed_no_retry';save(s);record(item,{delivery:'unconfirmed',deliveryAt:now()})}
   }
+  function readingStatus(){
+    const c=config(),s=state(),p=s.platformStatus?.tieba||{};
+    const cached=history(home).items.filter(x=>x.platform==='tieba'&&now()-x.at<7*86400000&&x.at<=now());
+    return {serviceReady:!stopped,enabled:c.enabled===true&&c.platforms.includes('tieba'),busy,
+      outcome:p.outcome||'not_attempted',lastAttemptAt:p.lastAttemptAt||null,lastAttemptForum:p.lastAttemptForum||null,
+      lastSuccessAt:p.lastSuccessAt||null,retryAfter:p.retryAfter||null,
+      remaining:{browse:Math.max(0,c.browseDailyLimit-s.browseCount),modelCalls:Math.max(0,c.modelDailyLimit-s.modelCount),tokens:Math.max(0,c.tokenDailyLimit-s.tokens)},
+      cachedThreads:cached.length,cachedExcerpts:cached.reduce((n,x)=>n+x.excerpts.length,0),
+      latestCachedAt:cached[0]?.at||null,readOnly:true,sharedDailyBudget:true,freshRead:false,
+      note:'这是读取状态，不是学习成果。已缓存正文用 materials platform=tieba 读；收藏结果用 list/read 查。一次失败或额度耗尽不表示整个贴吧不可用。普通网页抓取的403与此专用读取器不同。'};
+  }
+  async function readNow({forum}={},signal){
+    signal?.throwIfAborted();
+    const choices=forumChoices(home).forums.map(x=>x.name);
+    if(forum!==undefined&&(!validForum(forum)||!choices.includes(forum)))throw Error('FORUM_NOT_FOLLOWED');
+    const initial=readingStatus();const result=outcome=>({...readingStatus(),outcome,freshRead:false});
+    if(stopped)return result('reader_not_ready');
+    if(!initial.enabled)return result('disabled');
+    if(busy)return result('busy');
+    if(!choices.length)return result('no_followed_forums');
+    if(initial.remaining.browse<1||initial.remaining.modelCalls<1||initial.remaining.tokens<4096)return result('daily_budget_exhausted');
+    if(initial.retryAfter>now())return result('backoff');
+    if(initial.lastAttemptAt&&now()-initial.lastAttemptAt<300000)return result('cooldown');
+    busy=true;controller=new AbortController();
+    const abort=()=>controller?.abort();signal?.addEventListener('abort',abort,{once:true});
+    const timer=setTimeout(abort,60000);
+    try{
+      signal?.throwIfAborted();const c=config(),s=state();
+      await browse(s,c,controller.signal,forum||choices[Math.floor((Number(s.browseCursor)||0)/c.platforms.length)%choices.length]);
+      signal?.throwIfAborted();const latest=state();
+      return {...readingStatus(),busy:false,outcome:latest.platformStatus?.tieba?.outcome||'read_failed',freshRead:latest.lastOutcome==='tieba_learning_material_ready'};
+    }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);controller=null;busy=false;}
+  }
   async function tick({browseOnly=false}={}){
     if(busy||stopped)return;busy=true;let timer;
     try{
@@ -158,11 +198,13 @@ export function createSocial({home,llm,now=Date.now,random=Math.random,fetchPubl
     }catch(error){try{const s=state();s.lastOutcome=['DAILY_MODEL_BUDGET','INVALID_CONFIG','INVALID_STATE','INCOMPLETE_MODEL_RESULT'].includes(error.message)?error.message:'browse_or_decision_failed';save(s)}catch{}}
     finally{clearTimeout(timer);controller=null;busy=false}
   }
-  function status(){try{const c=config(),s=state();return {activityPolicy:'soft-evidence-v1',activityWeights:activityWeights(readActivity(home,null,now())),enabled:c.enabled,busy,day:s.day,nextAt:s.nextAt||null,browseToday:s.browseCount,modelCallsToday:s.modelCount,accountedTokensToday:s.tokens,postsReservedToday:s.postCount,lastOutcome:s.lastOutcome||'scheduled',lastPostedAt:s.lastPostedAt||null,platforms:c.platforms,platformStatus:s.platformStatus||{},recentReads:(s.observations||[]).map(({platform,at,evidence})=>({platform,at,evidence})),limits:{browse:c.browseDailyLimit,modelCalls:c.modelDailyLimit,tokens:c.tokenDailyLimit,posts:c.postDailyLimit,cooldownMinutes:c.postCooldownMinutes},publicMaterials:read(libraryFile,{items:[]}).items.filter(v=>validateCandidate(v,now())).length,source:'public metadata, first-part subtitle excerpts and public comment samples; no video playback claim',depth:depthDiagnostics(home),tieba:{policy:tiebaPolicy,enabled:c.platforms.includes('tieba'),forums:forumChoices(home).forums.map(x=>x.name),selfSelected:forumChoices(home).initialized,readOnly:true,semanticReviewRequired:true,sharedDailyBudget:true,automaticPersonaWrites:false,automaticPromptInjection:false},noPrivateChatInput:true}}catch{return {enabled:false,error:'invalid_state'}}}
-  return {tick,status,history:()=>history(home),stop(){stopped=true;controller?.abort()}};
+  function status(){try{const c=config(),s=state();return {activityPolicy:'soft-evidence-v1',activityWeights:activityWeights(readActivity(home,null,now())),enabled:c.enabled,busy,day:s.day,nextAt:s.nextAt||null,browseToday:s.browseCount,modelCallsToday:s.modelCount,accountedTokensToday:s.tokens,postsReservedToday:s.postCount,lastOutcome:s.lastOutcome||'scheduled',lastPostedAt:s.lastPostedAt||null,platforms:c.platforms,platformStatus:s.platformStatus||{},recentReads:(s.observations||[]).map(({platform,at,evidence})=>({platform,at,evidence})),limits:{browse:c.browseDailyLimit,modelCalls:c.modelDailyLimit,tokens:c.tokenDailyLimit,posts:c.postDailyLimit,cooldownMinutes:c.postCooldownMinutes},publicMaterials:read(libraryFile,{items:[]}).items.filter(v=>validateCandidate(v,now())).length,source:'public metadata, first-part subtitle excerpts and public comment samples; no video playback claim',depth:depthDiagnostics(home),tieba:{policy:tiebaPolicy,interactiveReader:true,interactiveReaderReady:tiebaReadingStatus(home).serviceReady,reading:readingStatus(),enabled:c.platforms.includes('tieba'),forums:forumChoices(home).forums.map(x=>x.name),selfSelected:forumChoices(home).initialized,readOnly:true,semanticReviewRequired:true,sharedDailyBudget:true,automaticPersonaWrites:false,automaticPromptInjection:false},noPrivateChatInput:true}}catch{return {enabled:false,error:'invalid_state'}}}
+  return {tick,status,readingStatus,readNow,history:()=>history(home),stop(){stopped=true;controller?.abort()}};
 }
 export function apply(ctx){
   const social=createSocial({home:process.env.DSH_HOME||'/srv/dsh-cloud/home',llm:ctx.llm});
+  const unbind=bindTiebaService(process.env.DSH_HOME||'/srv/dsh-cloud/home',social);
+  ctx.on('dispose',unbind);
   // Restoring a due discovery job at startup does not itself publish a post.
   void social.tick({browseOnly:true});
   ctx.effect(()=>{const timer=setInterval(()=>void social.tick(),60000);return()=>clearInterval(timer)});

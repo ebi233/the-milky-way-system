@@ -6,7 +6,6 @@ WebSocket initialization, profile lookup or default insecure TLS transport.
 import asyncio,json,logging,re,sys
 from types import SimpleNamespace
 
-FORUMS=('多肉','花卉','烘焙')
 MAX_BYTES=1024*1024
 class ReadError(Exception):pass
 
@@ -53,8 +52,18 @@ class ReadTransport:
                     chunks.append(chunk)
                 return b''.join(chunks)
 
+def resolve_forum(threads,requested):
+    name=threads.forum.fname;fid=threads.forum.fid
+    if not isinstance(name,str) or not 1<=len(name)<=24 or not re.fullmatch(r'[\w ·-]+',name) or not isinstance(fid,int) or isinstance(fid,bool) or fid<=0:raise ReadError('source_mismatch')
+    return name,fid
+
+def project_resolved(posts,requested,canonical,fid,tid):
+    if getattr(posts.forum,'fid',None)!=fid:raise ReadError('source_mismatch')
+    result=project_posts(posts,canonical,tid)
+    return {**result,'forum':requested,'resolvedForum':canonical,'forumId':fid}
+
 async def read_forum(forum,seen):
-    if not isinstance(forum,str) or not 2<=len(forum)<=24 or not re.fullmatch(r'[\w ·-]+',forum) or not isinstance(seen,list) or len(seen)>200:raise ReadError('invalid_source')
+    if not isinstance(forum,str) or not 1<=len(forum)<=24 or not re.fullmatch(r'[\w ·-]+',forum) or not isinstance(seen,list) or len(seen)>200:raise ReadError('invalid_source')
     import aiohttp,aiotieba
     from aiotieba.api.get_threads import _api as threads_api
     from aiotieba.api.get_posts import _api as posts_api
@@ -65,9 +74,10 @@ async def read_forum(forum,seen):
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=7,connect=3),trust_env=False,cookie_jar=aiohttp.DummyCookieJar(),headers={'User-Agent':'aiotieba/4.8.4 XinghePublicReader/0.1','x_bd_data_type':'protobuf'}) as session:
             core=ReadTransport(session)
             threads=await threads_api.request_http(core,forum,1,10,1,False,LEGACY_VERSION)
-            tid=select_thread(threads,forum,seen)
+            canonical,fid=resolve_forum(threads,forum)
+            tid=select_thread(threads,canonical,seen)
             posts=await posts_api.request_http(core,tid,1,20,0,False,False,True,0)
-            return project_posts(posts,forum,tid)
+            return project_resolved(posts,forum,canonical,fid,tid)
 
 def main():
     try:

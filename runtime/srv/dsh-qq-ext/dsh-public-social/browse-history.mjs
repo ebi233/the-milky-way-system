@@ -2,6 +2,7 @@ import {mkdirSync,writeFileSync,renameSync,accessSync,constants} from 'node:fs';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {read,safePublicText,canonicalSource} from './social-policy.mjs';
+import {validForum} from './tieba-follows.mjs';
 import {gentleText,tiebaPolicy} from './tieba-source.mjs';
 const outcomes=new Set(['read','picked','skipped','decision_failed','budget_skipped']);
 const deliveries=new Set(['publishing','published','unconfirmed']);
@@ -10,7 +11,7 @@ export function projectCard(v){
   const url=canonicalSource(v?.id);
   if(!url||!safePublicText(v?.title,300)||!Number.isFinite(v?.at))return null;
   if(v.id.startsWith('tieba:')&&(v.learningReview!==tiebaPolicy||!gentleText(v.title,300)||!Array.isArray(v.excerpts)||!v.excerpts.length||v.excerpts.length>3||v.excerpts.some(x=>!gentleText(x,160))))return null;
-  return {id:v.id,url,title:v.title,at:v.at,platform:String(v.platform||'').slice(0,30),
+  return {id:v.id,url,title:v.title,at:v.at,forum:v.id.startsWith('tieba:')&&validForum(v.forum)?v.forum:null,resolvedForum:v.id.startsWith('tieba:')&&validForum(v.resolvedForum)?v.resolvedForum:null,platform:String(v.platform||'').slice(0,30),
     outcome:outcomes.has(v.outcome)?v.outcome:'read',
     reason:['interesting','not_selected','model_or_budget_failed','insufficient_content'].includes(v.reason)?v.reason:'',
     evidence:['public_subtitle_excerpt','public_description_and_comments','public_title_description_only','rendered_public_page','public_thread_excerpt'].includes(v.evidence)?v.evidence:'public_title_description_only',
@@ -26,7 +27,7 @@ export function history(home){
 export function recordCard(home,source,patch={},at=Date.now()){
   const h=history(home),old=h.items.find(v=>v.id===source.id);
   const item=projectCard({...old,id:source.id,title:source.title,platform:source.platform||old?.platform||'bilibili',at:old?.at||at,
-    learningReview:source.learningReview||old?.learningReview,evidence:source.evidence||old?.evidence,subtitle:source.subtitle?.status||old?.subtitle,comments:source.comments?.status||old?.comments,
+    forum:source.forum||old?.forum,resolvedForum:source.resolvedForum||old?.resolvedForum,learningReview:source.learningReview||old?.learningReview,evidence:source.evidence||old?.evidence,subtitle:source.subtitle?.status||old?.subtitle,comments:source.comments?.status||old?.comments,
     excerpts:source.excerpts||(source.subtitle||source.comments?[...(source.subtitle?.status==='read'?[source.subtitle.text?.slice(0,600)]:[]),...(source.comments?.status==='read'?source.comments.snippets||[]:[])].filter(Boolean):old?.excerpts||[]),
     truncated:source.subtitle?.truncated??old?.truncated,...patch});
   if(!item)return;
